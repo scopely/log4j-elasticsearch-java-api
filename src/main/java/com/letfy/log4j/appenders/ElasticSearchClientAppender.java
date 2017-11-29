@@ -15,13 +15,19 @@
  */
 package com.letfy.log4j.appenders;
 
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.google.common.base.Supplier;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestClientFactory;
-import io.searchbox.client.config.ClientConfig;
+import io.searchbox.client.config.HttpClientConfig;
 import io.searchbox.core.Index;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.spi.ThrowableInformation;
+import vc.inreach.aws.request.AWSSigner;
+import vc.inreach.aws.request.AWSSigningRequestInterceptor;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -29,7 +35,9 @@ import java.io.Writer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,6 +60,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
     private String elasticIndex = getInitialIndex();
     private String elasticType = "logging";
     private String elasticHost = "http://localhost:9200";
+    private String awsRegion = null;
 
     protected String getInitialHostname() {
         String host = "localhost";
@@ -91,13 +100,37 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
         // Need to do this if the cluster name is changed, probably need to set this and sniff the cluster
         try {
             // Configuration
-            ClientConfig clientConfig = new ClientConfig.Builder(elasticHost).multiThreaded(true).build();
+            HttpClientConfig clientConfig = new HttpClientConfig.Builder(elasticHost).multiThreaded(true).build();
 
             // Construct a new Jest client according to configuration via factory
-            JestClientFactory factory = new JestClientFactory();
-            factory.setClientConfig(clientConfig);
+            JestClientFactory factory;
+
+            if (awsRegion != null) {
+                @SuppressWarnings("Guava") final Supplier<LocalDateTime> clock = () -> LocalDateTime.now(ZoneOffset.UTC);
+                final AWSSigner awsSigner = new AWSSigner(new DefaultAWSCredentialsProviderChain(),  awsRegion, "es", clock);
+                final AWSSigningRequestInterceptor requestInterceptor = new AWSSigningRequestInterceptor(awsSigner);
+
+                factory = new JestClientFactory() {
+                    @Override
+                    protected HttpClientBuilder configureHttpClient(HttpClientBuilder builder) {
+                        builder.addInterceptorLast(requestInterceptor);
+                        return builder;
+                    }
+
+                    @Override
+                    protected HttpAsyncClientBuilder configureHttpClient(HttpAsyncClientBuilder builder) {
+                        builder.addInterceptorLast(requestInterceptor);
+                        return builder;
+                    }
+                };
+            } else {
+                factory = new JestClientFactory();
+            }
+
+            factory.setHttpClientConfig(clientConfig);
             client = factory.getObject();
         } catch (Exception ex) {
+            ex.printStackTrace();
         }
 
         super.activateOptions();
@@ -119,6 +152,14 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
      */
     public void setElasticHost(String elasticHost) {
         this.elasticHost = elasticHost;
+    }
+
+    public String getAwsRegion() {
+        return awsRegion;
+    }
+
+    public void setAwsRegion(String awsRegion) {
+        this.awsRegion = awsRegion;
     }
 
     /**
@@ -169,7 +210,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
     /**
      * Name application using log4j.
      *
-     * @param applicationId
+     * @param applicationName
      */
     public void setApplicationName(String applicationName) {
         this.applicationName = applicationName;
@@ -187,7 +228,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
     /**
      * Host name application run.
      *
-     * @param ip
+     * @param hostName
      */
     public void setHostName(String hostName) {
         this.hostName = hostName;

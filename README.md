@@ -42,4 +42,7 @@ log4j.appender.elastic.hostName=my_laptop
 log4j.appender.elastic.applicationName=demo
 log4j.appender.elastic.elasticIndex=logging-index
 log4j.appender.elastic.elasticType=logging
+
+# defaults to null. if provided, requests are signed for use against an AWS ES cluster
+log4j.appender.elastic.awsRegion=us-east-1
 </code></pre>
