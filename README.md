@@ -1,3 +1,10 @@
+# Scopely's fork
+
+This fork sings the HTTP requests with AWS credentials which allows us
+to send the data to Amazon's ElasticSearch clusters.
+
+It also replaced Maven with Gradle.
+
 log4j-elasticsearch-java-api
 ============================
 
