@@ -1,7 +1,7 @@
 buildscript {
     repositories { jcenter() }
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.0'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.2'
     }
 }
 
@@ -39,12 +39,10 @@ dependencies {
     compile 'junit:junit:4.11'
 }
 
-configurations {
-    runtime.exclude (group: 'com.amazonaws')
-    runtime.exclude (group: 'org.apache.httpcomponents')
-}
-
 shadowJar {
     zip64 true
+    relocate 'com.amazonaws', 'es.shadow.com.amazonaws'
+    relocate 'com.fasterxml.jackson', 'es.shadow.com.fasterxml.jackson'
+    relocate 'org.apache.httpcomponents', 'es.shadow.org.apache.httpcomponents'
     mergeServiceFiles()
 }
