@@ -100,14 +100,17 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
         // Need to do this if the cluster name is changed, probably need to set this and sniff the cluster
         try {
             // Configuration
-            HttpClientConfig clientConfig = new HttpClientConfig.Builder(elasticHost).multiThreaded(true).build();
+            HttpClientConfig clientConfig = new HttpClientConfig.Builder(elasticHost).multiThreaded(true)
+                    .connTimeout(5000)
+                    .readTimeout(5000)
+                    .build();
 
             // Construct a new Jest client according to configuration via factory
             JestClientFactory factory;
 
             if (awsRegion != null) {
                 @SuppressWarnings("Guava") final Supplier<LocalDateTime> clock = () -> LocalDateTime.now(ZoneOffset.UTC);
-                final AWSSigner awsSigner = new AWSSigner(new DefaultAWSCredentialsProviderChain(),  awsRegion, "es", clock);
+                final AWSSigner awsSigner = new AWSSigner(new DefaultAWSCredentialsProviderChain(), awsRegion, "es", clock);
                 final AWSSigningRequestInterceptor requestInterceptor = new AWSSigningRequestInterceptor(awsSigner);
 
                 factory = new JestClientFactory() {
@@ -303,7 +306,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
          * @throws Exception
          */
         @Override
-        public LoggingEvent call() throws Exception {
+        public LoggingEvent call() {
             try {
                 if (client != null) {
                     // Set up the es index response 
@@ -318,6 +321,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
                     client.execute(index);
                 }
             } catch (Exception ex) {
+                ex.printStackTrace();
             }
             return loggingEvent;
         }
