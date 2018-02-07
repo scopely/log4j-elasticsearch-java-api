@@ -16,6 +16,7 @@
 package com.letfy.log4j.appenders;
 
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.util.EC2MetadataUtils;
 import com.google.common.base.Supplier;
 import io.searchbox.client.JestClient;
 import io.searchbox.client.JestClientFactory;
@@ -139,20 +140,10 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
         super.activateOptions();
     }
 
-    /**
-     * Elastic Search host.
-     *
-     * @return
-     */
     public String getElasticHost() {
         return elasticHost;
     }
 
-    /**
-     * Elastic Search host.
-     *
-     * @param elasticHost
-     */
     public void setElasticHost(String elasticHost) {
         this.elasticHost = elasticHost;
     }
@@ -165,74 +156,34 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
         this.awsRegion = awsRegion;
     }
 
-    /**
-     * Elastic Search index.
-     *
-     * @return
-     */
     public String getElasticIndex() {
         return elasticIndex;
     }
 
-    /**
-     * Elastic Search index.
-     *
-     * @param elasticIndex
-     */
     public void setElasticIndex(String elasticIndex) {
         this.elasticIndex = elasticIndex;
     }
 
-    /**
-     * Elastic Search type.
-     *
-     * @return Type
-     */
     public String getElasticType() {
         return elasticType;
     }
 
-    /**
-     * Elastic Search type.
-     *
-     * @param elasticType
-     */
     public void setElasticType(String elasticType) {
         this.elasticType = elasticType;
     }
 
-    /**
-     * Name application using log4j.
-     *
-     * @return
-     */
     public String getApplicationName() {
         return applicationName;
     }
 
-    /**
-     * Name application using log4j.
-     *
-     * @param applicationName
-     */
     public void setApplicationName(String applicationName) {
         this.applicationName = applicationName;
     }
 
-    /**
-     * Host name application run.
-     *
-     * @return
-     */
     public String getHostName() {
         return hostName;
     }
 
-    /**
-     * Host name application run.
-     *
-     * @param hostName
-     */
     public void setHostName(String hostName) {
         this.hostName = hostName;
     }
@@ -298,6 +249,10 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
         }
 
 
+        private void writeExtras(Map<String, Object> json) {
+            json.put("instanceId", EC2MetadataUtils.getInstanceId());
+        }
+
         /**
          * Method is called by ExecutorService and insert the document into
          * ElasticSearch
@@ -316,6 +271,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
                     writeBasic(data, loggingEvent);
                     writeThrowable(data, loggingEvent);
                     writeMDC(data, loggingEvent);
+                    writeExtras(data);
                     // insert the document into elasticsearch
                     Index index = new Index.Builder(data).index(getElasticIndex()).type(getElasticType()).id(uuid).build();
                     client.execute(index);
