@@ -57,6 +57,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
     private ExecutorService threadPool = Executors.newSingleThreadExecutor();
     private JestClient client;
     private String applicationName = "application";
+    private String sourceId = "unknown";
     private String hostName = getInitialHostname();
     private String elasticIndex = getInitialIndex();
     private String elasticType = "logging";
@@ -180,6 +181,14 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
         this.applicationName = applicationName;
     }
 
+    public String getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
+    }
+
     public String getHostName() {
         return hostName;
     }
@@ -221,6 +230,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
             json.put("@timestamp", new Date(event.getTimeStamp()).toInstant().toString());
             json.put("hostName", getHostName());
             json.put("applicationName", getApplicationName());
+            json.put("sourceId", getSourceId());
             json.put("logger", event.getLoggerName());
             json.put("level", event.getLevel().toString());
             json.put("message", event.getMessage());
