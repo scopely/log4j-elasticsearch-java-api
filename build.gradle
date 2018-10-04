@@ -29,6 +29,7 @@ repositories {
      maven { url "https://oss.sonatype.org/content/groups/public/" }
      maven { url "http://repo.maven.apache.org/maven2" }
 }
+
 dependencies {
     compile 'io.searchbox:jest:5.3.3'
     compile 'log4j:log4j:1.2.17'
@@ -41,6 +42,7 @@ dependencies {
 }
 
 shadowJar {
+    classifier = null
     zip64 true
     relocate 'com.amazonaws', 'es.shadow.com.amazonaws'
     relocate 'com.fasterxml.jackson', 'es.shadow.com.fasterxml.jackson'
