@@ -35,11 +35,12 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +56,7 @@ import java.util.concurrent.Executors;
  */
 public class ElasticSearchClientAppender extends AppenderSkeleton {
 
-    private DateTimeFormatter formatter;
+    private SimpleDateFormat formatter;
     private ExecutorService threadPool = Executors.newSingleThreadExecutor();
     private JestClient client;
     private String applicationName = "application";
@@ -143,7 +144,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
 
         // Setup the date formatter
         try {
-            formatter = DateTimeFormatter.ofPattern(getElasticDateFormat());
+            formatter = new SimpleDateFormat(getElasticDateFormat());
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -311,7 +312,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
         }
 
         private String getIndexPattern(LoggingEvent event) {
-            return String.format("%s-%s", getElasticIndex(), formatter.format(new Date(event.getTimeStamp()).toInstant()));
+            return String.format("%s-%s", getElasticIndex(), formatter.format(Date.from(Instant.ofEpochSecond(event.getTimeStamp()))));
         }
     }
 }
