@@ -312,7 +312,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
         }
 
         private String getIndexPattern(LoggingEvent event) {
-            return String.format("%s-%s", getElasticIndex(), formatter.format(Date.from(Instant.ofEpochSecond(event.getTimeStamp()))));
+            return String.format("%s-%s", getElasticIndex(), formatter.format(Date.from(Instant.ofEpochMilli(event.getTimeStamp()))));
         }
     }
 }
