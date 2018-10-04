@@ -291,7 +291,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
         @Override
         public LoggingEvent call() {
             try {
-                if (client != null) {
+                if (client != null && formatter != null) {
                     // Set up the es index response 
                     String uuid = UUID.randomUUID().toString();
                     Map<String, Object> data = new HashMap<String, Object>();
