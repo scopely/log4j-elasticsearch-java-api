@@ -39,6 +39,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,6 +55,7 @@ import java.util.concurrent.Executors;
  */
 public class ElasticSearchClientAppender extends AppenderSkeleton {
 
+    private DateTimeFormatter formatter;
     private ExecutorService threadPool = Executors.newSingleThreadExecutor();
     private JestClient client;
     private String applicationName = "application";
@@ -63,6 +65,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
     private String elasticType = "logging";
     private String elasticHost = "http://localhost:9200";
     private String awsRegion = null;
+    private String elasticDateFormat = "YYYY.MM.dd";
 
     protected String getInitialHostname() {
         String host = "localhost";
@@ -138,6 +141,13 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
             ex.printStackTrace();
         }
 
+        // Setup the date formatter
+        try {
+            formatter = DateTimeFormatter.ofPattern(getElasticDateFormat());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
         super.activateOptions();
     }
 
@@ -159,6 +169,14 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
 
     public String getElasticIndex() {
         return elasticIndex;
+    }
+
+    public void setElasticDateFormat(String elasticDateFormat) {
+        this.elasticDateFormat = elasticDateFormat;
+    }
+
+    public String getElasticDateFormat() {
+        return elasticDateFormat;
     }
 
     public void setElasticIndex(String elasticIndex) {
@@ -273,7 +291,7 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
         @Override
         public LoggingEvent call() {
             try {
-                if (client != null) {
+                if (client != null && formatter != null) {
                     // Set up the es index response 
                     String uuid = UUID.randomUUID().toString();
                     Map<String, Object> data = new HashMap<String, Object>();
@@ -283,13 +301,17 @@ public class ElasticSearchClientAppender extends AppenderSkeleton {
                     writeMDC(data, loggingEvent);
                     writeExtras(data);
                     // insert the document into elasticsearch
-                    Index index = new Index.Builder(data).index(getElasticIndex()).type(getElasticType()).id(uuid).build();
+                    Index index = new Index.Builder(data).index(getIndexPattern(loggingEvent)).type(getElasticType()).id(uuid).build();
                     client.execute(index);
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
             return loggingEvent;
+        }
+
+        private String getIndexPattern(LoggingEvent event) {
+            return String.format("%s-%s", getElasticIndex(), formatter.format(new Date(event.getTimeStamp()).toInstant()));
         }
     }
 }
